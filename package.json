@@ -1,0 +1,34 @@
+{
+  "name": "dom-scrollsync",
+  "version": "0.0.0",
+  "description": "dom scrollsync",
+  "main": "index.js",
+  "scripts": {
+    "start": "budo example.js --live",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reminyborg/dom-scrollsync.git"
+  },
+  "keywords": [
+    "dom",
+    "scroll",
+    "sync",
+    "simple"
+  ],
+  "author": "Remi Nyborg <remi@nyborg.priv.no>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reminyborg/dom-scrollsync/issues"
+  },
+  "homepage": "https://github.com/reminyborg/dom-scrollsync#readme",
+  "devDependencies": {
+    "budo": "^10.0.4",
+    "standard": "^8.0.0"
+  },
+  "dependencies": {
+    "bel": "^5.1.5",
+    "nanocomponent": "^6.4.2"
+  }
+}
