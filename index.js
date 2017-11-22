@@ -10,7 +10,8 @@ function ScrollSync (options) {
   window.addEventListener('message', e => {
     if (
       typeof e.data.type !== 'undefined' &&
-      e.data.type === 'dom-scrollsync'
+      e.data.type === 'dom-scrollsync' &&
+      e.data.id === options.id
     ) {
       this.updateSlaves(false, e.data.bounds, e.data.offset)
     }
@@ -21,10 +22,14 @@ ScrollSync.prototype.update = function (props) {
   props = props || {}
   this.enabled = typeof props.enabled === 'undefined' ? true : props.enabled
   this.containers = this.options.containers.map((selector, index) => {
-    if (typeof selector === 'object') {
-      return selector
+    if (typeof selector !== 'string') {
+      return { window: selector }
     }
     var element = document.querySelector(selector)
+    if (element.tagName === 'IFRAME') {
+      return { window: element.contentWindow }
+    }
+
     element.addEventListener('scroll', this.syncs[index], false)
     var markersById = getMarkers(
       Array.from(element.querySelectorAll(this.options.markers)),
@@ -73,12 +78,9 @@ ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
     if (master === slave) return
     if (!master && slave.window) return
     if (slave.window) {
-      var frame = slave.window
-      if (typeof frame === 'string') {
-        frame = document.querySelector(frame).contentWindow
-      }
-      frame.postMessage(
+      slave.window.postMessage(
         {
+          id: this.options.id,
           type: 'dom-scrollsync',
           bounds: bounds,
           offset: offset,

@@ -18,10 +18,11 @@ function Compare () {
   this.left = [1, 10, 20, 30, 60, 90]
   this.right = [10, 20, 50, 70, 75, 90]
   this.sync = ScrollSync({
+    id: 'sync',
     offset: 0,
     containers: !isIframe
-      ? ['#left', '#right', { window: '#iframe', selector: '#right' }]
-      : ['#right', { window: window.parent, selector: '#left' }],
+      ? ['#left', '#right', '#iframe']
+      : ['#right', window.parent],
     markers: '.marker'
   })
 }
