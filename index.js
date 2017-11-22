@@ -1,15 +1,31 @@
+/* global requestAnimationFrame */
 function ScrollSync (options) {
   if (!(this instanceof ScrollSync)) return new ScrollSync(options)
   this.options = options
   this.sync = this.sync.bind(this)
+  this.updateSlaves = this.updateSlaves.bind(this)
+
+  this.syncs = options.containers.map(() => throttle(this.sync))
+
+  window.addEventListener('message', e => {
+    if (
+      typeof e.data.type !== 'undefined' &&
+      e.data.type === 'dom-scrollsync'
+    ) {
+      this.updateSlaves(false, e.data.bounds, e.data.offset)
+    }
+  })
 }
 
 ScrollSync.prototype.update = function (props) {
   props = props || {}
   this.enabled = typeof props.enabled === 'undefined' ? true : props.enabled
-  this.containers = this.options.containers.map(selector => {
+  this.containers = this.options.containers.map((selector, index) => {
+    if (typeof selector === 'object') {
+      return selector
+    }
     var element = document.querySelector(selector)
-    element.addEventListener('scroll', this.sync, false)
+    element.addEventListener('scroll', this.syncs[index], false)
     var markersById = getMarkers(
       Array.from(element.querySelectorAll(this.options.markers)),
       element,
@@ -35,30 +51,50 @@ ScrollSync.prototype.sync = function (e) {
   if (typeof master === 'undefined') return
   if (master.element.scrollTop === master.lastScroll) return
 
+  var offset = this.options.offset
+    ? master.element.parentNode.clientHeight * this.options.offset / 100
+    : 0
+
+  var scroll =
+    (master.element.scrollTop + offset) / master.element.scrollHeight * 100
+  var index = master.markers.findIndex(pos => pos.top > scroll)
+  if (index === -1) return
+  var last = index === 0 ? false : master.markers[index - 1]
+  var next = master.markers[index]
+  this.updateSlaves(
+    master,
+    [last, next, (scroll - (last.top || 0)) / (next.top - (last.top || 0))],
+    offset
+  )
+}
+
+ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
   this.containers.forEach(slave => {
     if (master === slave) return
-    var offset = this.options.offset
-      ? master.element.parentNode.clientHeight * this.options.offset / 100
-      : 0
-
-    var scroll =
-      (master.element.scrollTop + offset) / master.element.scrollHeight * 100
-    var index = master.markers.findIndex(pos => pos.top > scroll)
-    if (index === -1) return
-    var bounds = [
-      index === 0 ? false : master.markers[index - 1],
-      master.markers[index]
-    ]
-    var boundsPosition =
-      (scroll - (bounds[0].top || 0)) / (bounds[1].top - (bounds[0].top || 0))
+    if (!master && slave.window) return
+    if (slave.window) {
+      var frame = slave.window
+      if (typeof frame === 'string') {
+        frame = document.querySelector(frame).contentWindow
+      }
+      frame.postMessage(
+        {
+          type: 'dom-scrollsync',
+          bounds: bounds,
+          offset: offset,
+          selector: slave.selector
+        },
+        '*'
+      )
+      return
+    }
 
     var slaveBounds = [
       slave.markersById[bounds[0].id] || false,
       slave.markersById[bounds[1].id]
     ]
     if (typeof slaveBounds[1] === 'undefined') return
-    var addToTop =
-      (slaveBounds[1].top - (slaveBounds[0].top || 0)) * boundsPosition
+    var addToTop = (slaveBounds[1].top - (slaveBounds[0].top || 0)) * bounds[2]
 
     slave.lastScroll = Math.round(
       slave.element.scrollHeight *
@@ -82,6 +118,21 @@ function getMarkers (markers, container, indexName) {
     }
     return list
   }, {})
+}
+
+function throttle (callback) {
+  var requestId
+  var later = (context, args) => () => {
+    requestId = null
+    callback.apply(context, args)
+  }
+
+  var throttled = function (...args) {
+    if (requestId === null || requestId === undefined) {
+      requestId = requestAnimationFrame(later(this, args))
+    }
+  }
+  return throttled
 }
 
 function addOffsets (element, container) {
