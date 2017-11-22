@@ -13,6 +13,7 @@ function ScrollSync (options) {
       e.data.type === 'dom-scrollsync' &&
       e.data.id === options.id
     ) {
+      if (options.debug) console.log(e.data)
       this.updateSlaves(false, e.data.bounds, e.data.offset)
     }
   })
@@ -44,6 +45,8 @@ ScrollSync.prototype.update = function (props) {
       markersById: markersById
     }
   })
+
+  if (this.options.debug) console.log(this.containers)
   this.sync()
 }
 
@@ -110,12 +113,13 @@ ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
 }
 
 function getMarkers (markers, container, indexName) {
+  console.log(container.scrollHeight)
   return markers.reduce((list, element, index) => {
     if (indexName) index = element.dataset[indexName]
     if (typeof index !== 'undefined' && typeof list[index] === 'undefined') {
       list[index] = {
         id: index,
-        top: addOffsets(element, container) / container.scrollHeight * 100
+        top: getOffset(element, container) / container.scrollHeight * 100
       }
     }
     return list
@@ -137,10 +141,10 @@ function throttle (callback) {
   return throttled
 }
 
-function addOffsets (element, container) {
-  var offset = element.offsetTop
-  if (element === container) return offset
-  return offset + addOffsets(element.parentNode, container)
+function getOffset (element, container) {
+  var child = element.getBoundingClientRect()
+  var parent = container.getBoundingClientRect()
+  return child.top - parent.top
 }
 
 module.exports = ScrollSync
