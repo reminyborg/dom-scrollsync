@@ -25,10 +25,8 @@
   "homepage": "https://github.com/reminyborg/dom-scrollsync#readme",
   "devDependencies": {
     "budo": "^10.0.4",
-    "standard": "^8.0.0"
-  },
-  "dependencies": {
-    "bel": "^5.1.5",
-    "nanocomponent": "^6.4.2"
+    "standard": "^8.0.0",
+    "nanocomponent": "^6.4.2",
+    "bel": "^5.1.5"
   }
 }
