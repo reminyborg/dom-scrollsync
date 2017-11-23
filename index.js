@@ -4,6 +4,7 @@ function ScrollSync (options) {
   this.options = options
   this.sync = this.sync.bind(this)
   this.updateSlaves = this.updateSlaves.bind(this)
+  this.updateFilteredMarkers = this.updateFilteredMarkers.bind(this)
 
   this.syncs = options.containers.map(() => throttle(this.sync))
 
@@ -11,10 +12,20 @@ function ScrollSync (options) {
     if (
       typeof e.data.type !== 'undefined' &&
       e.data.type === 'dom-scrollsync' &&
-      e.data.id === options.id
+      e.data.id === options.id &&
+      this.containers
     ) {
-      if (options.debug) console.log(e.data)
-      this.updateSlaves(false, e.data.bounds, e.data.offset)
+      if (e.data.bounds) {
+        this.updateSlaves(false, e.data.bounds, e.data.offset)
+      } else if (e.data.rawmarkers) {
+        this.containers.forEach((container) => {
+          if (container.window) {
+            container.rawmarkers = e.data.rawmarkers
+            container.markersById = e.data.markersById
+          }
+        })
+        this.updateFilteredMarkers()
+      }
     }
   })
 }
@@ -22,12 +33,16 @@ function ScrollSync (options) {
 ScrollSync.prototype.update = function (props) {
   props = props || {}
   this.enabled = typeof props.enabled === 'undefined' ? true : props.enabled
+  var windows = []
   this.containers = this.options.containers.map((selector, index) => {
     if (typeof selector !== 'string') {
+      windows.push(selector)
       return { window: selector }
     }
     var element = document.querySelector(selector)
     if (element.tagName === 'IFRAME') {
+      element.onload = () => this.update(props)
+      windows.push(element.contentWindow)
       return { window: element.contentWindow }
     }
 
@@ -37,17 +52,51 @@ ScrollSync.prototype.update = function (props) {
       element,
       this.options.keyName
     )
-    var markers = Object.keys(markersById).map(id => markersById[id])
+    var rawmarkers = Object.keys(markersById).map(id => markersById[id])
     return {
       selector: selector,
       element: element,
-      markers: markers,
+      rawmarkers: rawmarkers,
       markersById: markersById
     }
   })
 
-  if (this.options.debug) console.log(this.containers)
+  windows.forEach((win) => {
+    this.containers.forEach((container) => {
+      if (container.element) {
+        win.postMessage({
+          id: this.options.id,
+          type: 'dom-scrollsync',
+          selector: container.selector,
+          rawmarkers: container.rawmarkers,
+          markersById: container.markersById
+        }, '*')
+      }
+    })
+  })
+
+  this.updateFilteredMarkers()
+
   this.sync()
+}
+
+ScrollSync.prototype.updateFilteredMarkers = function () {
+  var filter = false
+  this.containers.forEach((container) => {
+    if (container.markersById) {
+      var keys = Object.keys(container.markersById)
+      if (filter === false) filter = keys
+      else filter = filter.filter((f) => keys.indexOf(f) !== -1)
+    }
+  })
+
+  this.containers.forEach((container) => {
+    if (container.markersById) {
+      container.markers = filter.map((prop) => container.markersById[prop])
+    }
+  })
+
+  if (this.options.debug) console.log(this.containers)
 }
 
 ScrollSync.prototype.sync = function (e) {
@@ -113,7 +162,6 @@ ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
 }
 
 function getMarkers (markers, container, indexName) {
-  console.log(container.scrollHeight)
   return markers.reduce((list, element, index) => {
     if (indexName) index = element.dataset[indexName]
     if (typeof index !== 'undefined' && typeof list[index] === 'undefined') {

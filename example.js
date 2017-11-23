@@ -5,11 +5,8 @@ var ScrollSync = require('./index')
 var isIframe = false
 try {
   isIframe = window.self !== window.top
-} catch (e) {
-  isIframe = true
-}
-
-var noIframe = true
+} catch (e) { isIframe = true }
+var noIframe = false
 
 function Compare () {
   if (!(this instanceof Compare)) return new Compare()
@@ -27,7 +24,7 @@ function Compare () {
     containers: noIframe
       ? ['#left', '#right']
       : (!isIframe
-        ? ['#left', '#right', '#iframe']
+        ? ['#left', '#iframe']
         : ['#right', window.parent]),
     markers: '.marker'
   })
