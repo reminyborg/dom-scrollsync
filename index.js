@@ -109,7 +109,7 @@ ScrollSync.prototype.sync = function (e) {
   if (master.element.scrollTop === master.lastScroll) return
 
   var offset = this.options.offset
-    ? master.element.parentNode.clientHeight * this.options.offset / 100
+    ? master.element.clientHeight * this.options.offset / 100
     : 0
 
   var scroll =
