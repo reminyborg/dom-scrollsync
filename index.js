@@ -13,6 +13,7 @@ function ScrollSync (options) {
       e.data.type === 'dom-scrollsync' &&
       e.data.id === options.id
     ) {
+      if (options.debug) console.log(e.data)
       this.updateSlaves(false, e.data.bounds, e.data.offset)
     }
   })
@@ -45,7 +46,7 @@ ScrollSync.prototype.update = function (props) {
     }
   })
 
-  if (this.options.debug) console.log('containers', this.containers)
+  if (this.options.debug) console.log(this.containers)
   this.sync()
 }
 
@@ -68,16 +69,14 @@ ScrollSync.prototype.sync = function (e) {
   if (index === -1) return
   var last = index === 0 ? false : master.markers[index - 1]
   var next = master.markers[index]
-  var bounds = [
-    last,
-    next,
-    (scroll - (last.top || 0)) / (next.top - (last.top || 0))
-  ]
-  this.updateSlaves(master, bounds, offset)
+  this.updateSlaves(
+    master,
+    [last, next, (scroll - (last.top || 0)) / (next.top - (last.top || 0))],
+    offset
+  )
 }
 
 ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
-  if (this.options.debug) console.log('master', bounds[0], bounds[1], bounds[2])
   this.containers.forEach(slave => {
     if (master === slave) return
     if (!master && slave.window) return
@@ -95,20 +94,12 @@ ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
       return
     }
 
-    var diff = bounds[2]
     var slaveBounds = [
-      slave.markersById[bounds[0].id],
+      slave.markersById[bounds[0].id] || false,
       slave.markersById[bounds[1].id]
     ]
-    if (typeof slaveBounds[0] === 'undefined') {
-      slaveBounds[0] = findNext(slave.markers, slave.markers.length, (m) => m.id < bounds[0].id, -1)
-    }
-    if (typeof slaveBounds[1] === 'undefined') {
-      slaveBounds[1] = findNext(slave.markers, 0, (m) => m.id > bounds[1].id, 1)
-      diff = diff / 2
-    }
-    var addToTop = (slaveBounds[1].top - (slaveBounds[0].top || 0)) * diff
-    if (this.options.debug) console.log('slave', slaveBounds[0], slaveBounds[1], addToTop)
+    if (typeof slaveBounds[1] === 'undefined') return
+    var addToTop = (slaveBounds[1].top - (slaveBounds[0].top || 0)) * bounds[2]
 
     slave.lastScroll = Math.round(
       slave.element.scrollHeight *
@@ -122,6 +113,7 @@ ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
 }
 
 function getMarkers (markers, container, indexName) {
+  console.log(container.scrollHeight)
   return markers.reduce((list, element, index) => {
     if (indexName) index = element.dataset[indexName]
     if (typeof index !== 'undefined' && typeof list[index] === 'undefined') {
@@ -147,12 +139,6 @@ function throttle (callback) {
     }
   }
   return throttled
-}
-
-function findNext (list, index, check, direction) {
-  if (typeof list[index + direction] === undefined) return list[index]
-  if (check(list[index + direction])) return list[index + direction]
-  return findNext(list, index + direction, check, direction)
 }
 
 function getOffset (element, container) {
