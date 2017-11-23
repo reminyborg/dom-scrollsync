@@ -9,20 +9,26 @@ try {
   isIframe = true
 }
 
+var noIframe = true
+
 function Compare () {
   if (!(this instanceof Compare)) return new Compare()
   Nanocomponent.call(this)
 
   this.leftHeight = 3000
   this.rightHeight = 2000
-  this.left = [1, 10, 20, 30, 60, 90]
-  this.right = [10, 20, 50, 70, 75, 90]
+  this.left = [[1, 0], [2, 10], [3, 20], [5, 60], [6, 70]]
+  this.right = [[1, 10], [2, 20], [3, 50], [4, 70], [6, 75], [8, 90]]
   this.sync = ScrollSync({
+    debug: true,
     id: 'sync',
     offset: 0,
-    containers: !isIframe
-      ? ['#left', '#right', '#iframe']
-      : ['#right', window.parent],
+    keyName: 'key',
+    containers: noIframe
+      ? ['#left', '#right']
+      : (!isIframe
+        ? ['#left', '#right', '#iframe']
+        : ['#right', window.parent]),
     markers: '.marker'
   })
 }
@@ -58,8 +64,12 @@ Compare.prototype.createElement = function () {
             </div>
           </div>
         </div>
-        <iframe style="height: 400px; widht: 400px; "id="iframe" src="/">
-        </iframe>
+        ${noIframe
+          ? null
+          : html`
+            <iframe style="height: 400px; widht: 400px; "id="iframe" src="/">
+            </iframe>`
+        }
       </div>
     `
   } else {
@@ -93,12 +103,13 @@ Compare.prototype.load = function () {
 function renderMarker (marker, index) {
   return html`
     <div class="marker" style="
-      position: absolute; top: ${marker}%;
+      position: absolute; top: ${marker[1]}%;
       padding: 5px;
       border: solid gray 1px;
       background-color: white;"
+      data-key=${marker[0]} 
     >
-      ${index}
+      ${marker[0]}
     </div>
   `
 }
