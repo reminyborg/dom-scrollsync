@@ -126,6 +126,7 @@ ScrollSync.prototype.sync = function (e) {
 }
 
 ScrollSync.prototype.updateSlaves = function (master, bounds, offset) {
+  if (!this.enabled) return
   this.containers.forEach(slave => {
     if (master === slave) return
     if (!master && slave.window) return
