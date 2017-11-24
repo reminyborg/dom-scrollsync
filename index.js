@@ -192,7 +192,7 @@ function throttle (callback) {
 function getOffset (element, container) {
   var child = element.getBoundingClientRect()
   var parent = container.getBoundingClientRect()
-  return child.top - parent.top
+  return child.top - parent.top + container.scrollTop
 }
 
 module.exports = ScrollSync
