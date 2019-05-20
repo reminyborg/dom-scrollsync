@@ -1,6 +1,6 @@
 {
   "name": "dom-scrollsync",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "dom scrollsync",
   "main": "dist/scrollsync.cjs.js",
   "module": "dist/scrollsync.esm.js",
