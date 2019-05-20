@@ -1,6 +1,6 @@
 {
   "name": "dom-scrollsync",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "dom scrollsync",
   "main": "index.js",
   "source": true,
