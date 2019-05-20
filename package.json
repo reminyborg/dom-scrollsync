@@ -2,10 +2,13 @@
   "name": "dom-scrollsync",
   "version": "1.0.4",
   "description": "dom scrollsync",
-  "main": "index.js",
+  "main": "dist/scrollsync.cjs.js",
+  "module": "dist/scrollsync.esm.js",
+  "browser": "dist/scrollsync.umd.js",
   "source": true,
   "scripts": {
     "start": "budo example.js --live",
+    "build": "rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,9 +28,15 @@
   },
   "homepage": "https://github.com/reminyborg/dom-scrollsync#readme",
   "devDependencies": {
+    "rollup": "^1.0.0",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
     "budo": "^10.0.4",
     "standard": "^8.0.0",
     "nanocomponent": "^6.4.2",
     "bel": "^5.1.5"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
